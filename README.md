@@ -1,4 +1,4 @@
-# check-google-play-store-purchase-history
+# check-google-playstore-purchase-history
 
 Google은 API를 통한 개인정보(결제 내역) 자동 수집을 지원하고 있지 않습니다.
 
