@@ -1,12 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, {
+  useState,
+  useEffect,
+} from 'react';
+
+const STORAGE_KEY = 'uploadedPurchaseFile';
 
 export default function PurchaseHistory() {
   const [ fileContent, setFileContent ] = useState<string | null>(null);
   const [ error, setError ] = useState<string | null>(null);
 
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      setFileContent(saved);
+    }
+  }, []);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError(null);
+
     const file = e.target.files?.[0];
     if (!file) {
       return; // 파일 탐색기에서 아무것도 열지 않고 취소
@@ -18,19 +32,15 @@ export default function PurchaseHistory() {
     }
 
     const reader = new FileReader();
-
     reader.onload = (event) => {
-      try {
-        const text = event.target?.result;
-        if (typeof text !== 'string') {
-          throw new Error('파일 내용을 읽을 수 없습니다.');
-        }
-        setFileContent(text);
-      } catch (err: any) {
-        setError('파일 읽기 실패: ' + err.message);
+      const text = event.target?.result;
+      if (typeof text !== 'string') {
+        setError('파일 내용을 읽을 수 없습니다.');
+        return;
       }
+      setFileContent(text);
+      localStorage.setItem(STORAGE_KEY, text);
     };
-
     reader.readAsText(file);
   };
 
@@ -39,7 +49,7 @@ export default function PurchaseHistory() {
       <h1 className="text-xl font-bold mb-4 text-center">구매 내역 파일 업로드</h1>
       <input
         type="file"
-        accept=".json,application/json,.txt"
+        accept=".json,application/json"
         onChange={handleFileChange}
         className="block w-full text-gray-500
                    file:mr-4 file:py-2 file:px-4
