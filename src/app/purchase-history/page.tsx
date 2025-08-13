@@ -5,16 +5,26 @@ import React, {
   useEffect,
 } from 'react';
 
+import { parsePurchaseHistoryJson } from './purchaseHistoryParser';
+
+type ParsedPurchaseHistory = Array<{
+  title: string,
+  invoicePrice: string,
+  invoicePriceNumber: number,
+  documentType: string,
+  purchaseTime: string,
+}>;
+
 const STORAGE_KEY = 'uploadedPurchaseFile';
 
 export default function PurchaseHistory() {
-  const [ fileContent, setFileContent ] = useState<string | null>(null);
+  const [ parsedData, setParsedData ] = useState<ParsedPurchaseHistory | null>(null);
   const [ error, setError ] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      setFileContent(saved);
+    const json = localStorage.getItem(STORAGE_KEY);
+    if (json) {
+      resolveParsedData(json);
     }
   }, []);
 
@@ -33,15 +43,31 @@ export default function PurchaseHistory() {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      const text = event.target?.result;
-      if (typeof text !== 'string') {
+      const json = event.target?.result;
+      if (typeof json !== 'string') {
         setError('파일 내용을 읽을 수 없습니다.');
         return;
       }
-      setFileContent(text);
-      localStorage.setItem(STORAGE_KEY, text);
+
+      // save origin
+      localStorage.setItem(STORAGE_KEY, json);
+
+      resolveParsedData(json);
     };
     reader.readAsText(file);
+  };
+
+  /**
+   * JSON 데이터를 파싱하고 렌더링 상태값에 할당
+   * @param json
+   */
+  const resolveParsedData = (json: string) => {
+    const { success, data, error } = parsePurchaseHistoryJson(json);
+    if (!success) {
+      setError('JSON 파싱 오류: ' + error);
+      return;
+    }
+    setParsedData(data);
   };
 
   return (
@@ -63,11 +89,30 @@ export default function PurchaseHistory() {
 
       {error && <p className="mt-4 text-red-600 font-semibold">{error}</p>}
 
-      {fileContent && (
+      {parsedData && parsedData.length > 0 && (
         <section className="mt-6">
-          <pre className="whitespace-pre-wrap bg-gray-100 p-4 rounded-md">
-            {fileContent}
-          </pre>
+          <table className="w-full border border-gray-300 text-sm">
+            <thead className="bg-blue-100"> {/* TODO: FixedTab */}
+              <tr>
+                <th className="border px-4 py-2">#</th>
+                <th className="border px-4 py-2">상품명</th>
+                <th className="border px-4 py-2">유형</th>
+                <th className="border px-4 py-2">가격(₩)</th>
+                <th className="border px-4 py-2">결제 시각</th>
+              </tr>
+            </thead>
+            <tbody>
+              {parsedData.map((item, index) => (
+                <tr key={index} className="hover:bg-gray-50">
+                  <td className="border px-4 py-2 text-center">{index + 1}</td>
+                  <td className="border px-4 py-2">{item.title}</td>
+                  <td className="border px-4 py-2">{item.documentType}</td>
+                  <td className="border px-4 py-2 text-right">{item.invoicePrice}</td>
+                  <td className="border px-4 py-2">{item.purchaseTime}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </section>
       )}
     </main>
