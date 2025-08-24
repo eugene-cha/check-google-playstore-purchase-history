@@ -20,7 +20,13 @@ export function parsePurchaseHistoryJson(jsonText: string) {
       const { invoicePrice, doc, purchaseTime } = item.purchaseHistory;
       const { documentType, title } = doc;
 
-      const invoicePriceNumber = Number(invoicePrice.replace(/[₩,]/g, '')); // '₩'과 ',' 문자 모두 제거
+      let invoicePriceNumber: number;
+      if (invoicePrice.substring(0, 1) !== '₩') {
+        // NOTE: 현재 원화 외 결제 이력은 총 합 계산에서 제외중, 실시간 환산가로 적용?
+        invoicePriceNumber = 0;
+      } else {
+        invoicePriceNumber = Number(invoicePrice.replace(/[₩,]/g, '')); // '₩'과 ',' 문자 모두 제거
+      }
 
       return {
         title,

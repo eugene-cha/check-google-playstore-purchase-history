@@ -102,6 +102,15 @@ export default function PurchaseHistory() {
               </tr>
             </thead>
             <tbody>
+              <tr className="bg-gray-100 font-bold">
+                <td colSpan={3} className="border px-4 py-2 text-center">
+                  총합
+                </td>
+                <td className="border px-4 py-2 text-right">
+                  {parsedData.reduce((sum, item) => sum + item.invoicePriceNumber, 0).toLocaleString()}
+                </td>
+                <td className="border px-4 py-2"></td>
+              </tr>
               {parsedData.map((item, index) => (
                 <tr key={index} className="hover:bg-gray-50">
                   <td className="border px-4 py-2 text-center">{index + 1}</td>
