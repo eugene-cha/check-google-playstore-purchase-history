@@ -5,6 +5,7 @@ import React, {
   useEffect,
 } from 'react';
 
+import TableSkeleton from './components/TableSkeleton';
 import { parsePurchaseHistoryJson } from './purchaseHistoryParser';
 
 type ParsedPurchaseHistory = Array<{
@@ -18,14 +19,22 @@ type ParsedPurchaseHistory = Array<{
 const STORAGE_KEY = 'uploadedPurchaseFile';
 
 export default function PurchaseHistory() {
+  const [ loading, setLoading ] = useState(false);
   const [ parsedData, setParsedData ] = useState<ParsedPurchaseHistory | null>(null);
   const [ error, setError ] = useState<string | null>(null);
 
   useEffect(() => {
-    const json = localStorage.getItem(STORAGE_KEY);
-    if (json) {
-      resolveParsedData(json);
-    }
+    setLoading(true);
+    setTimeout(()=> {
+      // NOTE: localStorage는 동기적이라서 의도적으로 setTimeout을 주지 않으면 로딩이 너무 빨라 스켈레톤 UI 노출 불가능
+      // 스켈레톤 UI 테스트용으로 붙여놓은 것
+      const json = localStorage.getItem(STORAGE_KEY);
+      if (json) {
+        resolveParsedData(json);
+        setLoading(false);
+      }
+    }, 1000);
+
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,18 +50,20 @@ export default function PurchaseHistory() {
       return;
     }
 
+    setLoading(true);
+
     const reader = new FileReader();
     reader.onload = (event) => {
       const json = event.target?.result;
       if (typeof json !== 'string') {
         setError('파일 내용을 읽을 수 없습니다.');
+        setLoading(false);
         return;
       }
 
-      // save origin
-      localStorage.setItem(STORAGE_KEY, json);
-
+      localStorage.setItem(STORAGE_KEY, json); // save origin
       resolveParsedData(json);
+      setLoading(false);
     };
     reader.readAsText(file);
   };
@@ -89,7 +100,9 @@ export default function PurchaseHistory() {
 
       {error && <p className="mt-4 text-red-600 font-semibold">{error}</p>}
 
-      {parsedData && parsedData.length > 0 && (
+      {loading && <TableSkeleton />}
+
+      {!loading && parsedData && parsedData.length > 0 && (
         <section className="mt-6">
           <table className="w-full border border-gray-300 text-sm">
             <thead className="bg-blue-100"> {/* TODO: FixedTab */}
